@@ -15,7 +15,7 @@ namespace BookApp.ContextFactory
 
             var builder = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseSqlServer(config.GetConnectionString("DefaultConnection"),
-                prj => prj.MigrationsAssembly("Repositories.EfCore"));
+                prj => prj.MigrationsAssembly("BookApp"));
 
             return new ApplicationDbContext(builder.Options);
         }
