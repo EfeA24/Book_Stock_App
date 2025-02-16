@@ -2,15 +2,17 @@
 using Entities.Models;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Repositories.Contracts;
 using Services.Contrats;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
-namespace BooksDemo.Controllers
+namespace Presentation.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class BooksController : ControllerBase
     {
         private readonly IServiceManager _manager;
@@ -85,7 +87,7 @@ namespace BooksDemo.Controllers
 
             _manager.BookService.UpdateOneBook(id, existingBook, trackChanges: true);
 
-            return Ok(BookToDTO(existingBook)); // Convert to DTO
+            return Ok(BookToDTO(existingBook));
         }
 
         [HttpDelete("{id:int}")]
@@ -97,7 +99,7 @@ namespace BooksDemo.Controllers
 
             _manager.BookService.DeleteOneBook(id, trackChanges: true);
 
-            return NoContent(); // Use NoContent for successful deletion
+            return NoContent();
         }
 
         [HttpPatch("{id:int}")]
@@ -106,7 +108,7 @@ namespace BooksDemo.Controllers
             if (id <= 0)
                 return BadRequest("Invalid Book Id");
 
-            var entity =_manager.BookService.GetBookById(id, trackChanges: false);
+            var entity = _manager.BookService.GetBookById(id, trackChanges: false);
             if (entity == null)
                 return NotFound("Can't Find Book");
 
@@ -119,7 +121,7 @@ namespace BooksDemo.Controllers
             entity.Name = bookDto.Name;
             entity.Price = (decimal)bookDto.Price;
 
-            _manager.BookService.UpdateOneBook(id,entity, trackChanges: true);
+            _manager.BookService.UpdateOneBook(id, entity, trackChanges: true);
 
             return Ok(BookToDTO(entity));
         }

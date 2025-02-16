@@ -1,6 +1,7 @@
 using BookApp.Extentions;
 using Microsoft.EntityFrameworkCore;
 using Repositories.EfCore;
+using Presentations; // Ensure this namespace is correct and the assembly is referenced
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.ConfigureServiceManager();
 // Add services to the container.
 
 builder.Services.AddControllers()
+    .AddApplicationPart(typeof(Presentations.AssemblyReferance).Assembly)
     .AddNewtonsoftJson();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
