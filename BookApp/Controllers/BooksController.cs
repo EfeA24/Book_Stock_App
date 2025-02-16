@@ -73,30 +73,31 @@ namespace BooksDemo.Controllers
         [HttpPut("{id:int}")]
         public IActionResult UpdateBook([FromRoute] int id, [FromBody] BookDTO bookDto)
         {
-            var entity = _manager.BookService.UpdateOneBook(id, BookToDTO(bookDto));
-            if (entity == null)
-                return NotFound();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            entity.Name = bookDto.Name;
-            entity.Price = (decimal)bookDto.Price;
+            var existingBook = _manager.BookService.GetBookById(id, trackChanges: true);
+            if (existingBook == null)
+                return NotFound("Book not found");
 
-            _manager.Book.UpdateOneBook(entity);
-             _manager.Save();
+            existingBook.Name = bookDto.Name;
+            existingBook.Price = (decimal)bookDto.Price;
 
-            return Ok(BookToDTO(entity));
+            _manager.BookService.UpdateOneBook(id, existingBook, trackChanges: true);
+
+            return Ok(BookToDTO(existingBook)); // Convert to DTO
         }
 
         [HttpDelete("{id:int}")]
         public IActionResult DeleteBook([FromRoute] int id)
         {
-            var book =_manager.Book.GetOneBookById(id, trackChanges: true);
+            var book = _manager.BookService.GetBookById(id, trackChanges: false);
             if (book == null)
                 return NotFound("Can't Find Book");
 
-            _manager.Book.DeleteOneBook(book);
-            _manager.Save();
+            _manager.BookService.DeleteOneBook(id, trackChanges: true);
 
-            return Ok("Book Deleted Successfully");
+            return NoContent(); // Use NoContent for successful deletion
         }
 
         [HttpPatch("{id:int}")]
@@ -105,7 +106,7 @@ namespace BooksDemo.Controllers
             if (id <= 0)
                 return BadRequest("Invalid Book Id");
 
-            var entity =_manager.Book.GetOneBookById(id, trackChanges: true);
+            var entity =_manager.BookService.GetBookById(id, trackChanges: false);
             if (entity == null)
                 return NotFound("Can't Find Book");
 
@@ -118,8 +119,7 @@ namespace BooksDemo.Controllers
             entity.Name = bookDto.Name;
             entity.Price = (decimal)bookDto.Price;
 
-            _manager.Book.UpdateOneBook(entity);
-            _manager.Save();
+            _manager.BookService.UpdateOneBook(id,entity, trackChanges: true);
 
             return Ok(BookToDTO(entity));
         }

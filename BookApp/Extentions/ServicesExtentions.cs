@@ -3,6 +3,7 @@ using Repositories.Contracts;
 using Repositories.EfCore;
 using Services.Contrats;
 
+
 namespace BookApp.Extentions
 {
     public static class ServicesExtentions
@@ -19,9 +20,8 @@ namespace BookApp.Extentions
             services.AddScoped<IRepositoryManager, RepositoryManager>();
         }
 
-        public static void ConfigureServiceManager(this IServiceCollection services)
-        {
-            services.AddScoped<IServiceManager, IServiceManager>();
-        }
+        public static void ConfigureServiceManager(this IServiceCollection services)=>
+            services.AddScoped<IServiceManager, ServiceManager>();
+        
     }
 }
