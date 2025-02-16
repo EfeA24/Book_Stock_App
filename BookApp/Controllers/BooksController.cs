@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Repositories.Contracts;
+using Services.Contrats;
 using System.Threading.Tasks;
 
 namespace BooksDemo.Controllers
@@ -12,9 +13,9 @@ namespace BooksDemo.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        private readonly IRepositoryManager _manager;
+        private readonly IServiceManager _manager;
 
-        public BooksController(IRepositoryManager manager)
+        public BooksController(IServiceManager manager)
         {
             _manager = manager;
         }
@@ -29,11 +30,11 @@ namespace BooksDemo.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllBooks()
+        public IActionResult GetAllBooks()
         {
             try
             {
-                var books = await _manager.Book.GetAllBooks(false).ToListAsync();
+                var books = _manager.BookService.GetAllBooks(false);
                 return Ok(books);
             }
             catch (Exception ex)
@@ -47,8 +48,8 @@ namespace BooksDemo.Controllers
         public IActionResult GetOneBook([FromRoute(Name = "id")] int id)
         {
             var book = _manager
-                .Book
-                .GetOneBookById(id, false);
+                .BookService
+                .GetBookById(id, false);
             return Ok(book);
         }
 
@@ -64,8 +65,7 @@ namespace BooksDemo.Controllers
                 Price = (decimal)bookDto.Price
             };
 
-            _manager.Book.CreateOneBook(bookEntity);
-            _manager.Save();
+            _manager.BookService.CreateOneBooks(bookEntity);
 
             return CreatedAtAction(nameof(GetOneBook), new { id = bookEntity.Id }, BookToDTO(bookEntity));
         }
@@ -73,7 +73,7 @@ namespace BooksDemo.Controllers
         [HttpPut("{id:int}")]
         public IActionResult UpdateBook([FromRoute] int id, [FromBody] BookDTO bookDto)
         {
-            var entity = _manager.Book.GetOneBookById(id, trackChanges: true);
+            var entity = _manager.BookService.UpdateOneBook(id, BookToDTO(bookDto));
             if (entity == null)
                 return NotFound();
 

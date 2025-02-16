@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Repositories.Contracts;
 using Repositories.EfCore;
+using Services.Contrats;
 
 namespace BookApp.Extentions
 {
@@ -16,6 +17,11 @@ namespace BookApp.Extentions
         public static void ConfigureRepositoryManager(this IServiceCollection services)
         {
             services.AddScoped<IRepositoryManager, RepositoryManager>();
+        }
+
+        public static void ConfigureServiceManager(this IServiceCollection services)
+        {
+            services.AddScoped<IServiceManager, IServiceManager>();
         }
     }
 }
