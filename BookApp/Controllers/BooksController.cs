@@ -1,10 +1,10 @@
 ﻿using BookApp.DTO;
 using Entities.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Repositories.EfCore;
+using Repositories.Contracts;
+using System.Threading.Tasks;
 
 namespace BooksDemo.Controllers
 {
@@ -12,165 +12,116 @@ namespace BooksDemo.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-        public BooksController(ApplicationDbContext context)
+        private readonly IRepositoryManager _manager;
+
+        public BooksController(IRepositoryManager manager)
         {
-            _context = context;
+            _manager = manager;
         }
 
-        private static BookDTO BookToDTO(Books books)
+        private static BookDTO BookToDTO(Books book)
         {
             return new BookDTO
             {
-                Name = books.Name,
-                Price = books.Price,
+                Name = book.Name,
+                Price = book.Price,
             };
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllBooks()
+        public IActionResult GetAllBooks()
         {
-            var books = await _context.Books.ToListAsync();
-
-            if (books.Count == 0)
+            try
             {
-                return NotFound();
+                var books = _manager.Book.GetAllBooks(false);
+                return Ok(books);
             }
 
-            return Ok(books);
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetBook([FromRoute(Name = "id")] int id)
+        public IActionResult GetOneBook([FromRoute(Name = "id")] int id)
         {
-
-            var book = await _context.Books
-                .Where(i => i.Id == id)
-                .FirstOrDefaultAsync();
-
-            if (book == null)
-            {
-                return NotFound();
-            }
-            return Ok(book);
-        }
-
-        [HttpGet("{name}")]
-        public async Task<IActionResult> GetBookByName([FromRoute(Name = "name")] string name)
-        {
-
-            var book = await _context.Books
-                .Where(i => i.Name == name)
-                .FirstOrDefaultAsync();
-
-            if (book == null)
-            {
-                return NotFound();
-            }
+            var book = _manager
+                .Book
+                .GetOneBookById(id, false);
             return Ok(book);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateBook([FromBody] BookDTO booksave)
+        public IActionResult CreateBook([FromBody] BookDTO bookDto)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var bookEntity = new Books
             {
-                Name = booksave.Name,
-                Price = (decimal)booksave.Price
+                Name = bookDto.Name,
+                Price = (decimal)bookDto.Price
             };
 
-            _context.Books.Add(bookEntity);
-            await _context.SaveChangesAsync();
+            _manager.Book.CreateOneBook(bookEntity);
+            _manager.Save();
 
-            return CreatedAtAction(nameof(GetBook), new { id = bookEntity.Id }, BookToDTO(bookEntity));
+            return CreatedAtAction(nameof(GetOneBook), new { id = bookEntity.Id }, BookToDTO(bookEntity));
         }
 
-
-
-
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateBook([FromRoute] int id, [FromBody] BookDTO bookDTO)
+        public IActionResult UpdateBook([FromRoute] int id, [FromBody] BookDTO bookDto)
         {
-            var entity = await _context.Books.FindAsync(id);
-
+            var entity = _manager.Book.GetOneBookById(id, trackChanges: true);
             if (entity == null)
-            {
                 return NotFound();
-            }
 
-            entity.Name = bookDTO.Name;
-            entity.Price = (decimal)bookDTO.Price;
+            entity.Name = bookDto.Name;
+            entity.Price = (decimal)bookDto.Price;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            _manager.Book.UpdateOneBook(entity);
+             _manager.Save();
 
             return Ok(BookToDTO(entity));
         }
 
-        [HttpDelete ("{id}")]
-        public async Task<IActionResult> DeleteBook(int? id)
+        [HttpDelete("{id:int}")]
+        public IActionResult DeleteBook([FromRoute] int id)
         {
-            if(id == null)
-            {
-                return NotFound("Can't Find Id");
-            }
-
-            var book = await _context.Books.FirstOrDefaultAsync(i => i.Id == id);
-
-            if(book == null)
-            {
+            var book =_manager.Book.GetOneBookById(id, trackChanges: true);
+            if (book == null)
                 return NotFound("Can't Find Book");
-            }
-            _context.Books.Remove(book);
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
+            _manager.Book.DeleteOneBook(book);
+            _manager.Save();
 
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            return StatusCode(200, "Book Deleted Successfully");
+            return Ok("Book Deleted Successfully");
         }
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> PartiallyUpdate([FromRoute] int id, [FromBody] JsonPatchDocument<Books> bookPatch)
+        [HttpPatch("{id:int}")]
+        public IActionResult PartiallyUpdate([FromRoute] int id, [FromBody] JsonPatchDocument<BookDTO> bookPatch)
         {
             if (id <= 0)
-            {
                 return BadRequest("Invalid Book Id");
-            }
 
-            var entity = await _context.Books.FirstOrDefaultAsync(i => i.Id == id);
-
+            var entity =_manager.Book.GetOneBookById(id, trackChanges: true);
             if (entity == null)
-            {
                 return NotFound("Can't Find Book");
-            }
 
-            bookPatch.ApplyTo(entity, ModelState);
+            var bookDto = BookToDTO(entity);
+            bookPatch.ApplyTo(bookDto, ModelState);
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
-            await _context.SaveChangesAsync();
+            entity.Name = bookDto.Name;
+            entity.Price = (decimal)bookDto.Price;
 
-            return Ok(entity);
+            _manager.Book.UpdateOneBook(entity);
+            _manager.Save();
+
+            return Ok(BookToDTO(entity));
         }
     }
 }

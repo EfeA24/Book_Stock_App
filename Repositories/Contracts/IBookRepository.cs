@@ -10,7 +10,7 @@ namespace Repositories.Contracts
     public interface IBookRepository : IRepositoryBase<Books>
     {
         IQueryable<Books> GetAllBooks(bool trackChanges);
-        IQueryable<Books> GetAllBooksById(int id, bool trackChanges);
+        Books GetOneBookById(int id, bool trackChanges);
         void CreateOneBook(Books book);
         void UpdateOneBook(Books book);
         void DeleteOneBook(Books book);

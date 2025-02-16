@@ -32,10 +32,10 @@ namespace Repositories.EfCore
 
         }
 
-        public IQueryable<Books> GetAllBooksById(int id, bool trackChanges)
+        public Books GetOneBookById(int id, bool trackChanges)
         {
             return FindByCondition(b => b.Id == id, trackChanges)
-                .OrderBy(x => x.Id);
+                .SingleOrDefault();
         }
 
         public void UpdateOneBook(Books book)
