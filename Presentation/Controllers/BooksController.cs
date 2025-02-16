@@ -1,7 +1,7 @@
-﻿using BookApp.DTO;
-using Entities.Models;
+﻿using Entities.Models;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Presentation.DTO;
 using Services.Contrats;
 using System;
 using System.Collections.Generic;
@@ -108,18 +108,18 @@ namespace Presentation.Controllers
             if (id <= 0)
                 return BadRequest("Invalid Book Id");
 
-            var entity = _manager.BookService.GetBookById(id, trackChanges: false);
+            var entity = _manager.BookService.GetBookById(id, trackChanges: true);
             if (entity == null)
                 return NotFound("Can't Find Book");
 
             var bookDto = BookToDTO(entity);
-            bookPatch.ApplyTo(bookDto, ModelState);
+            bookPatch.ApplyTo(bookDto);
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             entity.Name = bookDto.Name;
-            entity.Price = (decimal)bookDto.Price;
+            entity.Price = bookDto.Price.HasValue ? bookDto.Price.Value : entity.Price;
 
             _manager.BookService.UpdateOneBook(id, entity, trackChanges: true);
 
