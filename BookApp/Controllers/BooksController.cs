@@ -29,17 +29,17 @@ namespace BooksDemo.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAllBooks()
+        public async Task<IActionResult> GetAllBooks()
         {
             try
             {
-                var books = _manager.Book.GetAllBooks(false);
+                var books = await _manager.Book.GetAllBooks(false).ToListAsync();
                 return Ok(books);
             }
-
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                // Log the exception
+                return StatusCode(500, "Internal server error");
             }
         }
 
